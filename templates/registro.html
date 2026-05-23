@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - ZENIT</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body class="welcome-bg">
+
+    <div class="welcome-container">
+        <img src="/static/img/cohete.png" alt="Cohete" class="rocket">
+        <h1 class="title">ZE<span>NIT</span></h1>
+        <p class="subtitle">Tu espacio para entender cómo te sientes</p>
+        <p class="registro-texto">crear tu cuenta</p>
+
+         {% if error %}
+        <p style="color:red; text-align:center; margin-bottom:15px;">
+            {{ error }}
+        </p>
+        {% endif %} 
+
+        <form action="/registro" method="post">
+            <div class="field">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Elige un nombre" required>
+            </div>
+
+            <div class="field">
+                <label for="clave">Clave</label>
+                <input type="password" id="clave" name="clave" placeholder="Elige una clave" required>
+            </div>
+
+            <button type="submit">Registrarse</button>
+        </form>
+
+        <p class="registro-texto">
+            ¿Ya tienes cuenta?
+            <a href="/" class="registro-link">Iniciar sesión</a>
+        </p>
+    </div>
+
+</body>
+</html>

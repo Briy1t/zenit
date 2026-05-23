@@ -1,0 +1,173 @@
+body.welcome-bg{
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #6A5ACD, #836FFF);
+    background-image: url('/static/img/fondo.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 0px;
+}
+
+.welcome-container {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.25);
+    width: 520px;
+    padding: 55px 45px;
+    text-align: center;
+    position: relative;
+    
+}
+.title span {
+    color: #6A4DF5; /* morado ZENIT */
+}
+
+.rocket {
+    width: 170px;
+    position: absolute;
+    top: -105px;
+    left: calc(50% - 85px);
+}
+
+.title {
+    font-size: 36px;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.title span {
+    color: #6A5ACD;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.field {
+    margin-bottom: 20px;
+    text-align: left;
+}
+.field label {
+    font-size: 16px;   
+    font-weight: 660;  
+    color: #333;      
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #6A5ACD;
+    color: white;
+    font-size: 16px;          
+    font-weight: 500;
+    cursor: pointer;
+     box-sizing: border-box;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #6A5ACD;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #5A4ACB;
+}
+
+.registro-texto {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+}
+
+.registro-link {
+    color: #6A5ACD;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.registro-link:hover {
+    text-decoration: underline;
+}
+
+/* Contenedor general */
+.resultado-container {
+    max-width: 420px;
+    margin: 60px auto;
+    text-align: center;
+    color: #fff;
+}
+
+/* Título */
+.resultado-titulo {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+/* Tarjeta blanca */
+.resultado-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    margin-bottom: 30px;
+}
+
+/* Índice */
+.resultado-indice {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.resultado-indice span {
+    font-size: 32px;
+    font-weight: 700;
+    color: #6A4DF5;
+}
+
+/* Frase */
+.resultado-frase {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #444;
+    line-height: 1.4;
+}
+
+/* Cohete */
+.resultado-cohete {
+    width: 110px;        
+    display: block;
+    margin: 0 auto;
+    margin-top: -10px;   
+    margin-bottom: 20px;
+    opacity: 0.95;      
+}
+
+
+/* Botón */
+.btn-volver {
+    display: inline-block;
+    padding: 12px 20px;
+    background: #6A4DF5;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 10px;
+}

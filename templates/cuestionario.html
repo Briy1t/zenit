@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cuestionario ZENIT</title>
+    <link rel="stylesheet" href="/static/styles.css">
+
+    <style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Urbanist', sans-serif;
+        background-image: url('/static/img/fondo.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+
+        padding-top: 40px; /* controla la distancia desde arriba */
+    }
+
+    .contenedor {
+        width: 100%;
+        max-width: 680px;
+        background: white;
+        padding: 60px 40px 40px 40px;
+        border-radius: 18px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+
+        margin: 0 auto;
+        margin-top: 0; /* ← CORREGIDO: antes 460px */
+    }
+
+    h1 {
+        text-align: center;
+        color: #6A4DF5;
+        margin-bottom: 30px;
+        font-weight: 700;
+        font-size: 32px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-top: 20px;
+        display: block;
+        color: #333;
+        font-size: 16px;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background: white;
+        color: #333;
+        font-size: 16px;
+        font-weight: 500;
+        box-sizing: border-box;
+        appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg fill='%236A5ACD' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 18px;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: #fafafa;
+        color: #333;
+        font-size: 15px;
+        height: 90px;
+        resize: none;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 35px;
+        padding: 12px;
+        background: linear-gradient(90deg, #6A4DF5, #8B5CF6);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #5a3ee0;
+    }
+    </style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <h1 style="margin-top: 0; margin-bottom: 10px; text-align:center; font-size:42px; font-weight:800;">
+        <span style="color:#000;">ZE</span><span style="color:#6A4DF5;">NIT</span>
+    </h1>
+
+    <p style="text-align:center; color:#6A4DF5; font-size:18px; margin-top:-20px; margin-bottom:40px;">
+        Tu punto más alto nace dentro de ti.
+    </p>
+
+    <form action="/cuestionario" method="post">
+        <input type="hidden" name="usuario_id" value="{{ usuario_id }}">
+
+
+        <label for="energia_social">Energía Social (1 a 5)</label>
+        <select id="energia_social" name="energia_social" required>
+            <option value="1">1 - Muy baja</option>
+            <option value="2">2 - Baja</option>
+            <option value="3">3 - Media</option>
+            <option value="4">4 - Alta</option>
+            <option value="5">5 - Muy alta</option>
+        </select>
+
+        <label for="energia_fisica">Energía Física (1 a 5)</label>
+        <select id="energia_fisica" name="energia_fisica" required>
+            <option value="1">1 - Muy baja</option>
+            <option value="2">2 - Baja</option>
+            <option value="3">3 - Media</option>
+            <option value="4">4 - Alta</option>
+            <option value="5">5 - Muy alta</option>
+        </select>
+
+        <label>Señales del cuerpo</label>
+        <textarea name="senales" placeholder="¿Qué señales te dio tu cuerpo hoy?" required></textarea>
+
+        <label>Drenantes</label>
+        <textarea name="drenantes" placeholder="¿Qué te drenó energía hoy?" required></textarea>
+
+        <label>Reguladores</label>
+        <textarea name="reguladoras" placeholder="¿Qué te ayudó a regularte hoy?" required></textarea>
+
+        <label>Emoción del día</label>
+        <textarea name="emocion" placeholder="¿Qué emoción predominó hoy?" required></textarea>
+
+        <label>Necesidades</label>
+        <textarea name="necesidades" placeholder="¿Qué necesitaste hoy?" required></textarea>
+
+        <label>Notas (opcional)</label>
+        <textarea name="notas" placeholder="Algo más que quieras registrar..."></textarea>
+
+        <button type="submit">Guardar Registro</button>
+    </form>
+</div>
+
+</body>
+</html>

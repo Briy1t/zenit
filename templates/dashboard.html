@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard ZENIT</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+
+<body class="dashboard-bg">
+
+    <!-- ENCABEZADO -->
+    <header class="header">
+        <div class="header-left">
+            <img src="/static/img/cohete.png" class="logo-cohete">
+            <h1 class="bienvenida">Bienvenida, {{ nombre_usuario }}</h1>
+        </div>
+
+        <div class="header-right">
+            <div class="emoji-dia">{{ emoji_dia }}</div>
+            <p class="frase-ia">{{ frase_ia }}</p>
+        </div>
+    </header>
+    <a href="/" class="btn-salir">Salir</a>
+
+
+    <!-- ESTADO HOY -->
+    <section class="estado-hoy card">
+        <h2>Tu estado hoy</h2>
+
+        <div class="estado-grid">
+
+            <div class="estado-item">
+                <p class="label">Energía Social</p>
+                <div class="barra-energia" data-valor="{{ energia_social }}"></div>
+            </div>
+
+            <div class="estado-item">
+                <p class="label">Energía Física</p>
+                <div class="barra-energia" data-valor="{{ energia_fisica }}"></div>
+            </div>
+
+            <div class="estado-item">
+                <p class="label">Emoción del día</p>
+                <p class="valor">{{ emocion }} {{ emoji_dia }}</p>
+            </div>
+
+            <div class="estado-item">
+                <p class="label">Trigger del día</p>
+                <p class="valor">{{ trigger }}</p>
+            </div>
+
+            <div class="estado-item">
+                <p class="label">Estrategia usada</p>
+                <p class="valor">{{ reguladores }}</p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- SEMANA EN PERSPECTIVA -->
+    <section class="semana card">
+        <h2>Tu semana en perspectiva</h2>
+
+        <div class="graficos-grid">
+
+            <div class="grafico-item">
+                <h3>Energía Social</h3>
+                <canvas id="graficoSocial"></canvas>
+            </div>
+
+            <div class="grafico-item">
+                <h3>Energía Física</h3>
+                <canvas id="graficoFisica"></canvas>
+            </div>
+
+            <div class="grafico-item">
+                <h3>Nivel ZENIT</h3>
+                <canvas id="graficoZenit"></canvas>
+            </div>
+
+            <div class="grafico-item">
+                <h3>Emociones</h3>
+                <canvas id="graficoEmociones"></canvas>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- REGULADORES Y DRENANTES -->
+    <section class="reguladores-drenantes">
+
+        <div class="card tabla-card">
+            <h2>Lo que te reguló hoy</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Regulador</th>
+                        <th>Frecuencia</th>
+                        <th>% Efectividad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in reguladores %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td>{{ item.frecuencia }}</td>
+                        <td>{{ item.efectividad }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card tabla-card">
+            <h2>Lo que te desreguló hoy</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Drenante</th>
+                        <th>Frecuencia</th>
+                        <th>% Impacto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in drenantes %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td>{{ item.frecuencia }}</td>
+                        <td>{{ item.impacto }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/dashboard.js"></script>
+
+</body>
+</html>

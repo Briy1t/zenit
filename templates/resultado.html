@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado - ZENIT</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body class="welcome-bg">
+
+    <div class="resultado-container">
+        <h2 class="resultado-titulo">Tu estado de hoy</h2>
+
+        <div class="resultado-card">
+            <p class="resultado-indice">
+                Índice general: <span>{{ index_val }}</span>
+            </p>
+
+            <p class="resultado-frase">
+                {{ frase }}
+            </p>
+        </div>
+
+        <img src="/static/img/cohete.png" class="resultado-cohete" alt="Cohete">
+
+        <a href="/dashboard?usuario_id={{ usuario_id }}" class="btn-volver">
+         Siguiente 
+        </a>
+
+    </div>
+
+</body>
+</html>
