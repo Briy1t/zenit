@@ -1,40 +1,98 @@
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-from fastapi.responses import RedirectResponse
-from app.auth import crear_usuario, obtener_usuario, verify_password
+from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.auth import crear_usuario, obtener_usuario, verify_password, obtener_usuario_por_id
 from app.database import (
     create_tables,
     get_connection,
     crear_tabla_registros,
     crear_tabla_indices_diarios,
+    crear_tablas_historial,
     guardar_registro,
     actualizar_indice_diario,
-    crear_tablas_historial,
     guardar_regulador,
-    guardar_drenante
+    guardar_drenante,
+    obtener_semana,
+    obtener_reguladores,
+    obtener_drenantes
 )
 
-from app.logger import registrar_evento
-
-from ia_local import clasificar_texto_local
+import random
 from datetime import datetime
+from typing import Optional
 
 
-# Inicializar BD
+# ---------------------------
+#  INICIALIZACIÓN BD
+# ---------------------------
+
 create_tables()
 crear_tabla_registros()
 crear_tabla_indices_diarios()
 crear_tablas_historial()
 
-
-
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+
+# ---------------------------
+#  FAVICON (evita 404)
+# ---------------------------
+
+@app.get("/favicon.ico")
+async def favicon():
+    return RedirectResponse(url="/static/img/cohete.png")
+
+
+# ---------------------------
+#  TIPS DEL DÍA
+# ---------------------------
+
+TIPS = [
+    "Respira profundo. Tu cuerpo sabe más de lo que tu mente procesa.",
+    "Una pausa de 30 segundos puede cambiar el tono de tu día.",
+    "No tienes que hacerlo perfecto, solo presente.",
+    "Tu energía es un recurso valioso: protégela.",
+    "Hoy mereces suavidad, incluso si no lo sientes.",
+    "Tu cuerpo te habla antes que tus pensamientos. Escúchalo.",
+    "Haz algo pequeño por ti, aunque sea un sorbo de agua.",
+    "No te exijas claridad cuando estás cansada.",
+    "Tu ritmo es válido, aunque sea lento.",
+    "Lo que sientes hoy no define quién eres.",
+    "Descansar también es avanzar.",
+    "Tu bienestar importa más que tu productividad.",
+    "Un minuto de respiración consciente es un regalo para tu sistema.",
+    "No ignores las señales del cuerpo: son sabias.",
+    "Hoy puedes elegir algo que te haga bien.",
+    "Tu valor no depende de tu energía.",
+    "Permítete sentir sin juzgarte.",
+    "Tu sistema necesita pausas, no castigos.",
+    "Eres más fuerte de lo que crees.",
+    "Hoy puedes empezar de nuevo, aunque sea a mitad del día."
+]
+
+
+# ---------------------------
+#  FRASES ZENIT (GLOBAL)
+# ---------------------------
+
+FRASES_ZENIT = {
+    1: ["Día pesado 🌑 Tu sistema está saturado, sé amable contigo."],
+    2: ["Día bajo 🌫️ Tu energía está sensible, necesitas espacio y calma."],
+    3: ["Día estable pero frágil 🌥️ Avanza despacio, tu cuerpo te está pidiendo suavidad."],
+    4: ["Día moderado 🌤️ No estás mal, pero tampoco en tu mejor punto. Escucha tus límites."],
+    5: ["Día sólido ✨ Tienes claridad suficiente para avanzar sin prisa."],
+    6: ["Día positivo 🌞 Tu energía está firme y sostenida."],
+    7: ["Día equilibrado 🔆 Tu sistema está funcionando de forma saludable."],
+    8: ["Día fuerte 🔥 Tu energía está alta y bien regulada."],
+    9: ["Día excepcional ✨ Tu presencia hoy es poderosa y clara."],
+    10: ["Día extraordinario 🌈 Estás en un nivel de equilibrio muy alto."]
+}
+
 
 # ---------------------------
 #  RUTAS
@@ -56,22 +114,15 @@ async def login(request: Request, nombre: str = Form(...), clave: str = Form(...
     if not user:
         return templates.TemplateResponse(
             "bienvenida.html",
-            {
-                "request": request,
-                "error": "El usuario no existe. ¿Quieres registrarte?"
-            }
+            {"request": request, "error": "El usuario no existe. ¿Quieres registrarte?"}
         )
 
     if not verify_password(clave, user["clave_hash"]):
         return templates.TemplateResponse(
             "bienvenida.html",
-            {
-                "request": request,
-                "error": "La clave es incorrecta."
-            }
+            {"request": request, "error": "La clave es incorrecta."}
         )
 
-    # PRIMERA VEZ → no tiene registros
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM registros WHERE usuario_id = ?", (user["id"],))
@@ -79,15 +130,9 @@ async def login(request: Request, nombre: str = Form(...), clave: str = Form(...
     conn.close()
 
     if total == 0:
-        return RedirectResponse(
-            url=f"/cuestionario?usuario_id={user['id']}",
-            status_code=303
-        )
+        return RedirectResponse(f"/cuestionario?usuario_id={user['id']}", status_code=303)
 
-    return RedirectResponse(
-        url=f"/dashboard?usuario_id={user['id']}",
-        status_code=303
-    )
+    return RedirectResponse(f"/dashboard?usuario_id={user['id']}", status_code=303)
 
 
 # ---------------------------
@@ -100,60 +145,36 @@ async def registro(request: Request):
 
 
 @app.post("/registro")
-async def registro_post(
-    request: Request,
-    nombre: str = Form(...),
-    clave: str = Form(...)
-):
+async def registro_post(request: Request, nombre: str = Form(...), clave: str = Form(...)):
     try:
         crear_usuario(nombre, clave)
         user = obtener_usuario(nombre)
+        return RedirectResponse(f"/cuestionario?usuario_id={user['id']}", status_code=303)
 
-        return RedirectResponse(
-            url=f"/cuestionario?usuario_id={user['id']}",
-            status_code=303
-        )
-
-    except Exception as e:
+    except Exception:
         return templates.TemplateResponse(
             "registro.html",
-            {
-                "request": request,
-                "error": "Ese nombre ya existe. Intenta con otro."
-            }
+            {"request": request, "error": "Ese nombre ya existe. Intenta con otro."}
         )
-
-
-
-# ---------------------------
-#  AUDITORÍA
-# ---------------------------
-
-@app.get("/auditoria")
-async def ver_auditoria():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM auditoria ORDER BY fecha DESC")
-    datos = cursor.fetchall()
-
-    conn.close()
-    return {"auditoria": [dict(row) for row in datos]}
+    
 
 
 # ---------------------------
-#  CUESTIONARIO (GET)
+#  CUESTIONARIO (GET) BLINDADO
 # ---------------------------
 
 @app.get("/cuestionario", response_class=HTMLResponse)
-async def mostrar_cuestionario(request: Request, usuario_id: int):
+async def mostrar_cuestionario(request: Request, usuario_id: int = None):
+
+    if usuario_id is None:
+        return RedirectResponse("/", status_code=303)
+
+    tip_del_dia = random.choice(TIPS)
     return templates.TemplateResponse(
         "cuestionario.html",
-        {
-            "request": request,
-            "usuario_id": usuario_id
-        }
+        {"request": request, "usuario_id": usuario_id, "tip_del_dia": tip_del_dia}
     )
+
 
 # ---------------------------
 #  CUESTIONARIO (POST)
@@ -166,91 +187,85 @@ async def guardar_cuestionario(
     energia_social: int = Form(...),
     energia_fisica: int = Form(...),
     senales: str = Form(...),
-    drenantes: str = Form(...),
-    reguladoras: str = Form(...),
+    drenantes: Optional[str] = Form(None),
+    reguladoras: Optional[str] = Form(None),
     emocion: str = Form(...),
-    necesidades: str = Form(...),
-    notas: str = Form("")
+    necesidades: Optional[str] = Form(None),
+    diario_texto: Optional[str] = Form(None)
 ):
 
-    # IA semántica
-    senales_score = clasificar_texto_local(senales)
-    drenantes_score = clasificar_texto_local(drenantes)
-    reguladoras_score = clasificar_texto_local(reguladoras)
-    emocion_score = clasificar_texto_local(emocion)
-
-    # Cálculo del índice
-    indice_zenit = (
-        energia_social +
-        energia_fisica +
-        senales_score +
-        drenantes_score +
-        reguladoras_score +
-        emocion_score
-    ) / 6
-
-    # Frase del día
-    FRASES = {
-        1: "Tu sistema está saturado 😵‍💫 Descansar también es avanzar.",
-        2: "Has sostenido más de lo que parece 💜 Sé amable contigo.",
-        3: "Tu equilibrio es moderado 😌 Mantén tus reguladores cerca.",
-        4: "Día sólido ✨ Aprovecha tu claridad.",
-        5: "Día brillante 🚀 Tu sistema está en su punto más alto."
+    senales_valores = {
+        "Dolor de cabeza": 1, "Cansancio": 2, "Palpitaciones": 1,
+        "Tensión muscular": 2, "Estómago revuelto": 1, "Respiración acelerada": 1,
+        "Tranquil@": 4, "Neutr@": 3, "Estable": 4, "Energética": 5
     }
 
-    nivel = max(1, min(int(round(indice_zenit)), 5))
-    frase = FRASES[nivel]
+    emociones_valores = {
+        "Triste": 1, "Ansiosa": 2, "Irritable": 2, "Estresada": 2, "Cansada": 2,
+        "Neutra": 3, "Tranquila": 4, "En paz": 4, "Alegre": 5, "Motivada": 5
+    }
 
-    # Datos para guardar
+    valor_senal = senales_valores.get(senales, 3)
+    valor_emocion = emociones_valores.get(emocion, 3)
+
+    senal_norm = valor_senal * 2
+    emocion_norm = valor_emocion * 2
+
+    indice = (energia_social + energia_fisica + senal_norm + emocion_norm) / 4
+
+    if drenantes and drenantes.strip():
+        indice -= 1
+
+    indice_entero = max(1, min(round(indice), 10))
+
+    frase_final = FRASES_ZENIT[indice_entero][0]
+
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+
     datos = {
-        "fecha": datetime.now().strftime("%Y-%m-%d"),
+        "fecha": fecha_hoy,
         "energia_social": energia_social,
         "energia_fisica": energia_fisica,
         "senales": senales,
-        "drenantes": drenantes,
-        "reguladoras": reguladoras,
+        "drenantes": drenantes or "",
+        "reguladoras": reguladoras or "",
         "emocion": emocion,
-        "necesidades": necesidades,
-        "notas": notas,
-        "puntaje_ia": float(indice_zenit),
-        "indice_zenit": float(indice_zenit),
-        "frase": frase
+        "necesidades": necesidades or "",
+        "notas": "",
+        "indice_zenit": float(indice_entero),
+        "frase": frase_final,
+        "diario_texto": diario_texto or ""
     }
 
-    # Guardar registro
     guardar_registro(usuario_id, datos)
 
-    # Guardar reguladores uno por uno
-    for r in reguladoras.split(","):
-        if r.strip():
-            guardar_regulador(usuario_id, r.strip(), datos["fecha"])
+    if reguladoras:
+        for r in reguladoras.split(","):
+            if r.strip():
+                guardar_regulador(usuario_id, r.strip().lower(), fecha_hoy)
 
-    # Guardar drenantes uno por uno
-    for d in drenantes.split(","):
-        if d.strip():
-            guardar_drenante(usuario_id, d.strip(), datos["fecha"])
+    if drenantes:
+        for d in drenantes.split(","):
+            if d.strip():
+                guardar_drenante(usuario_id, d.strip().lower(), fecha_hoy)
 
-    # Actualizar índice diario
-    actualizar_indice_diario(usuario_id, datos["fecha"])
+    actualizar_indice_diario(usuario_id, fecha_hoy)
 
-    # RETURN FINAL
     return templates.TemplateResponse(
         "resultado.html",
-        {
-            "request": request,
-            "index_val": round(indice_zenit, 1),
-            "frase": frase,
-            "usuario_id": usuario_id
-        }
+        {"request": request, "index_val": indice_entero, "frase": frase_final, "usuario_id": usuario_id}
     )
 
 
 # ---------------------------
-#  DASHBOARD (GET)
+#  DASHBOARD BLINDADO
 # ---------------------------
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def mostrar_dashboard(request: Request, usuario_id: int):
+async def mostrar_dashboard(request: Request, usuario_id: int = None):
+
+    if usuario_id is None:
+        return RedirectResponse("/", status_code=303)
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -259,40 +274,132 @@ async def mostrar_dashboard(request: Request, usuario_id: int):
         SELECT *
         FROM registros
         WHERE usuario_id = ?
-        ORDER BY fecha DESC
+        ORDER BY id DESC
         LIMIT 1
     """, (usuario_id,))
     registro = cursor.fetchone()
+    
+    cursor.execute("""
+        SELECT regulador, COUNT(*) AS veces
+        FROM reguladores_historial
+        WHERE usuario_id = ?
+        AND fecha >= DATE('now', '-30 days')
+        GROUP BY regulador
+        ORDER BY veces DESC
+    """, (usuario_id,))
+    reguladores_top = cursor.fetchall()
+    
+    cursor.execute("""
+        SELECT drenante, COUNT(*) AS veces
+        FROM drenantes_historial
+        WHERE usuario_id = ?
+        AND fecha >= DATE('now', '-30 days')
+        GROUP BY drenante
+        ORDER BY veces DESC
+    """, (usuario_id,))
+    drenantes_top = cursor.fetchall()
 
     conn.close()
 
     if not registro:
-        return RedirectResponse(
-            url=f"/cuestionario?usuario_id={usuario_id}",
-            status_code=303
-        )
+        return RedirectResponse(f"/cuestionario?usuario_id={usuario_id}", status_code=303)
 
-    
     usuario = obtener_usuario_por_id(registro["usuario_id"])
-    if not usuario:
-        return RedirectResponse(
-            url="/registro",
-            status_code=303
-        )
+    fecha = registro["fecha"]
+
+    reguladores_dia = obtener_reguladores(usuario_id, fecha)
+    drenantes_dia = obtener_drenantes(usuario_id, fecha)
+
+    dias_semana, valores_semana = obtener_semana(usuario_id)
+
+    indice = int(registro["indice_zenit"])
+    porcentaje = indice * 10
+
+    if indice <= 2:
+        emoji = "😞"
+    elif indice <= 4:
+        emoji = "😐"
+    elif indice <= 6:
+        emoji = "🙂"
+    elif indice <= 8:
+        emoji = "😊"
+    else:
+        emoji = "🤩"
+
+    frase_dashboard = FRASES_ZENIT[indice][0]
 
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
+            "usuario_id": usuario_id,
             "nombre_usuario": usuario["nombre"],
-            "emoji_dia": "😊",
-            "frase_ia": registro["frase"],
+            "emoji_dia": emoji,
+            "frase_ia": frase_dashboard,
             "energia_social": registro["energia_social"],
             "energia_fisica": registro["energia_fisica"],
             "emocion": registro["emocion"],
             "trigger": registro["senales"],
-            "reguladores": registro["reguladoras"],
-            "drenantes": registro["drenantes"]
+            "indice_zenit": porcentaje,
+            "reguladores": reguladores_dia,
+            "drenantes": drenantes_dia,
+            "semana_valores": valores_semana,
+            "semana_dias": dias_semana,
+            "diario_texto": registro["diario_texto"],
+            "reguladores_top": reguladores_top, 
+            "drenantes_top": drenantes_top,
         }
     )
 
+
+# ---------------------------
+#  DIARIO PERSONAL BLINDADO
+# ---------------------------
+
+@app.get("/diario", response_class=HTMLResponse)
+async def ver_diario(request: Request, usuario_id: int = None):
+
+    if usuario_id is None:
+        return RedirectResponse("/", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 
+            fecha,
+            MAX(diario_texto) AS diario_texto,
+            MAX(necesidades) AS necesidades
+        FROM registros
+        WHERE usuario_id = ?
+        GROUP BY fecha
+        ORDER BY fecha DESC
+    """, (usuario_id,))
+
+
+
+    diarios = cursor.fetchall()
+    conn.close()
+
+    return templates.TemplateResponse(
+        "diario_historial.html",
+        {"request": request, "usuario_id": usuario_id, "diarios": diarios}
+    )
+    
+@app.post("/guardar_diario")
+async def guardar_diario(usuario_id: int = Form(...), texto: str = Form("")):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+
+    cursor.execute("""
+        UPDATE registros
+        SET diario_texto = ?
+        WHERE usuario_id = ? AND fecha = ?
+    """, (texto, usuario_id, fecha_hoy))
+
+    conn.commit()
+    conn.close()
+
+    return {"status": "ok"}

@@ -1,161 +1,177 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <link rel="icon" type="image/png" href="/static/img/cohete.png">
     <meta charset="UTF-8">
     <title>Cuestionario ZENIT</title>
-    <link rel="stylesheet" href="/static/styles.css">
-
-    <style>
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: 'Urbanist', sans-serif;
-        background-image: url('/static/img/fondo.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-
-        padding-top: 40px; /* controla la distancia desde arriba */
-    }
-
-    .contenedor {
-        width: 100%;
-        max-width: 680px;
-        background: white;
-        padding: 60px 40px 40px 40px;
-        border-radius: 18px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-
-        margin: 0 auto;
-        margin-top: 0; /* ← CORREGIDO: antes 460px */
-    }
-
-    h1 {
-        text-align: center;
-        color: #6A4DF5;
-        margin-bottom: 30px;
-        font-weight: 700;
-        font-size: 32px;
-    }
-
-    label {
-        font-weight: 600;
-        margin-top: 20px;
-        display: block;
-        color: #333;
-        font-size: 16px;
-    }
-
-    select {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        background: white;
-        color: #333;
-        font-size: 16px;
-        font-weight: 500;
-        box-sizing: border-box;
-        appearance: none;
-        background-image: url("data:image/svg+xml;utf8,<svg fill='%236A5ACD' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 18px;
-    }
-
-    textarea {
-        width: 100%;
-        padding: 10px;
-        margin-top: 6px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        background: #fafafa;
-        color: #333;
-        font-size: 15px;
-        height: 90px;
-        resize: none;
-    }
-
-    button {
-        width: 100%;
-        margin-top: 35px;
-        padding: 12px;
-        background: linear-gradient(90deg, #6A4DF5, #8B5CF6);
-        border: none;
-        border-radius: 8px;
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-    button:hover {
-        background: #5a3ee0;
-    }
-    </style>
+    <link rel="stylesheet" href="/static/cuestionario.css">
 </head>
 
 <body>
 
-<div class="contenedor">
+<div class="layout">
 
-    <h1 style="margin-top: 0; margin-bottom: 10px; text-align:center; font-size:42px; font-weight:800;">
-        <span style="color:#000;">ZE</span><span style="color:#6A4DF5;">NIT</span>
-    </h1>
+    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
+    <div class="col-form">
+        <div class="contenedor">
 
-    <p style="text-align:center; color:#6A4DF5; font-size:18px; margin-top:-20px; margin-bottom:40px;">
-        Tu punto más alto nace dentro de ti.
-    </p>
+            <h1>Cuestionario <span class="ze">ZE</span><span class="nit">NIT</span></h1>
 
-    <form action="/cuestionario" method="post">
-        <input type="hidden" name="usuario_id" value="{{ usuario_id }}">
+            <form action="/cuestionario" method="post">
 
+                <input type="hidden" name="usuario_id" value="{{ usuario_id }}">
 
-        <label for="energia_social">Energía Social (1 a 5)</label>
-        <select id="energia_social" name="energia_social" required>
-            <option value="1">1 - Muy baja</option>
-            <option value="2">2 - Baja</option>
-            <option value="3">3 - Media</option>
-            <option value="4">4 - Alta</option>
-            <option value="5">5 - Muy alta</option>
-        </select>
+                <!-- ENERGÍA SOCIAL -->
+                <label>🗣️ Energía Social (1 a 10)</label>
+                <input type="number" name="energia_social" min="1" max="10" required>
 
-        <label for="energia_fisica">Energía Física (1 a 5)</label>
-        <select id="energia_fisica" name="energia_fisica" required>
-            <option value="1">1 - Muy baja</option>
-            <option value="2">2 - Baja</option>
-            <option value="3">3 - Media</option>
-            <option value="4">4 - Alta</option>
-            <option value="5">5 - Muy alta</option>
-        </select>
+                <!-- ENERGÍA FÍSICA -->
+                <label>🏃‍♀️ Energía Física (1 a 10)</label>
+                <input type="number" name="energia_fisica" min="1" max="10" required>
 
-        <label>Señales del cuerpo</label>
-        <textarea name="senales" placeholder="¿Qué señales te dio tu cuerpo hoy?" required></textarea>
+                <!-- SEÑALES DEL CUERPO -->
+                <label>🧠 Señales del cuerpo</label>
+                <select name="senales" required>
+                    <option value="">Selecciona una opción</option>
+                    <option>Dolor de cabeza</option>
+                    <option>Cansancio</option>
+                    <option>Palpitaciones</option>
+                    <option>Tensión muscular</option>
+                    <option>Estómago revuelto</option>
+                    <option>Respiración acelerada</option>
+                    <option>Tranquil@</option>
+                    <option>Neutr@</option>
+                    <option>Estable</option>
+                    <option>Energética</option>
+                </select>
 
-        <label>Drenantes</label>
-        <textarea name="drenantes" placeholder="¿Qué te drenó energía hoy?" required></textarea>
+                <!-- DRENANTES -->
+                <label>⚡ Drenantes (si no hubo, deja vacío)</label>
+                <textarea name="drenantes" placeholder="Ej: ruido, discusiones, estrés..."></textarea>
 
-        <label>Reguladores</label>
-        <textarea name="reguladoras" placeholder="¿Qué te ayudó a regularte hoy?" required></textarea>
+                <!-- REGULADORES -->
+                <label>🌿 Reguladores (separados por coma)</label>
+                <textarea name="reguladoras" placeholder="Ej: caminar, música, respirar..."></textarea>
 
-        <label>Emoción del día</label>
-        <textarea name="emocion" placeholder="¿Qué emoción predominó hoy?" required></textarea>
+                <!-- EMOCIÓN DEL DÍA -->
+                <label>💛 Emoción del día</label>
+                <select name="emocion" required>
+                    <option value="">Selecciona una emoción</option>
+                    <option>Triste</option>
+                    <option>Ansiosa</option>
+                    <option>Irritable</option>
+                    <option>Estresada</option>
+                    <option>Cansada</option>
+                    <option>Neutra</option>
+                    <option>Tranquila</option>
+                    <option>En paz</option>
+                    <option>Alegre</option>
+                    <option>Motivada</option>
+                </select>
 
-        <label>Necesidades</label>
-        <textarea name="necesidades" placeholder="¿Qué necesitaste hoy?" required></textarea>
+                <!-- NECESIDADES -->
+                <label>📝 Necesidades (recordatorio personal)</label>
+                <textarea name="necesidades" placeholder="Ej: descansar, hidratarme, salir a caminar..."></textarea>
 
-        <label>Notas (opcional)</label>
-        <textarea name="notas" placeholder="Algo más que quieras registrar..."></textarea>
+                <button type="submit">Guardar Registro</button>
+            </form>
 
-        <button type="submit">Guardar Registro</button>
-    </form>
+        </div>
+    </div>
+    
+    <!-- COLUMNA DERECHA: COHETE + DIARIO -->
+    <div class="col-gota">
+        <div class="panel-derecho">
+
+            <div class="gota-container">
+                
+                <!-- GOTA -->
+                <svg class="gota-svg" viewBox="0 0 100 160">
+                    <defs>
+                        <clipPath id="clip-gota">
+                            <path d="
+                                M50 5
+                                C65 30 80 60 80 95
+                                C80 125 67 150 50 155
+                                C33 150 20 125 20 95
+                                C20 60 35 30 50 5
+                                Z
+                            " />
+                        </clipPath>
+
+                        <linearGradient id="grad-gota" x1="0" y1="1" x2="0" y2="0">
+                            <stop offset="0%" stop-color="#4cc9f0"/>
+                            <stop offset="100%" stop-color="#7209b7"/>
+                        </linearGradient>
+                    </defs>
+
+                    <rect id="gota-fill"
+                        x="20" y="155"
+                        width="60" height="0"
+                        fill="url(#grad-gota)"
+                        clip-path="url(#clip-gota)" />
+
+                    <path d="
+                        M50 5
+                        C65 30 80 60 80 95
+                        C80 125 67 150 50 155
+                        C33 150 20 125 20 95
+                        C20 60 35 30 50 5
+                        Z
+                    " fill="none" stroke="#1b263b" stroke-width="3"/>
+
+                    <path id="ojo-izq" d="M38 90 C40 88 42 88 44 90" stroke="#1b263b" stroke-width="2"/>
+                    <path id="ojo-der" d="M56 90 C58 88 60 88 62 90" stroke="#1b263b" stroke-width="2"/>
+                    <path id="boca" d="M40 102 C45 108 55 108 60 102" stroke="#1b263b" stroke-width="2"/>
+                </svg>
+
+                <!-- TIP DEL DÍA -->
+                <div class="tip-dia">
+                    <h2>Tip del día</h2>
+                    <p>{{ tip_del_dia }}</p>
+                </div>
+
+                <!-- DIARIO PERSONAL -->
+                <div class="diario-card">
+                    <h2>📓 Diario personal</h2>
+                    <textarea 
+                        id="diario-texto" 
+                        name="diario_texto"
+                        maxlength="600" 
+                        placeholder="Escribe lo que sientes hoy... (máx. 100 palabras)"
+                        oninput="guardarDiario()"
+                    ></textarea>
+                </div>
+
+                <!-- DIBUJO -->
+                <div class="diario-dibujo">
+                    <p>Dibuja aquí:</p>
+                    <canvas id="canvas-dibujo"></canvas>
+                    <button id="limpiar-dibujo">Limpiar</button>
+                    <button id="descargar-dibujo">Descargar dibujo</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<!-- SCRIPT PARA GUARDAR EL DIARIO -->
+<script>
+function guardarDiario() {
+    const texto = document.getElementById("diario-texto").value;
+
+    fetch("/guardar_diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `usuario_id={{ usuario_id }}&texto=${encodeURIComponent(texto)}`
+    });
+}
+</script>
+
+<script src="/static/gota.js"></script>
+<script src="/static/diario.js"></script>
 
 </body>
 </html>
