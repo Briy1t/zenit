@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/png" href="/static/img/cohete.png">
+    <meta charset="UTF-8">
+    <title>Diario personal</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+
+<body class="dashboard-bg">
+
+<div class="container">
+
+    <h1>📓 Diario personal</h1>
+    <p>Notas guardadas por fecha</p>
+
+    {% if diarios %}
+        {% for d in diarios %}
+            <div class="card">
+
+                <!-- FECHA -->
+                <h3>{{ d["fecha"] }}</h3>
+
+                <!-- NECESIDADES -->
+                {% if d["necesidades"] and d["necesidades"].strip() %}
+                    <p><strong>Necesidades:</strong> {{ d["necesidades"] }}</p>
+                {% endif %}
+
+                <!-- DIARIO -->
+                {% if d["diario_texto"] and d["diario_texto"].strip() %}
+                    <p>{{ d["diario_texto"] }}</p>
+                {% else %}
+                    <p><em>No escribiste nada este día.</em></p>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No tienes notas guardadas todavía.</p>
+    {% endif %}
+
+    <a href="/dashboard?usuario_id={{ usuario_id }}" class="btn-cuestionario">
+        ← Volver al dashboard
+    </a>
+
+</div>
+
+</body>
+</html>

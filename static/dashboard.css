@@ -1,0 +1,281 @@
+.dashboard-bg {
+    background-image: url('/static/img/cielo.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    color: black;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.header-box {
+    background: rgba(255, 255, 255, 0.55); /* blanco suave */
+    backdrop-filter: blur(6px);
+    padding: 15px 25px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+
+.container {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-top: 40px;
+
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-cohete {
+    width: 70px;
+}
+
+.bienvenida {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.header-right {
+    text-align: right;
+}
+
+.emoji-dia {
+    font-size: 40px;
+}
+
+.frase-ia {
+    font-size: 18px;
+    opacity: 0.9;
+}
+.card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.20);
+    color: #000;
+}
+
+.chart-box {
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.estado-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.valor {
+    font-size: 18px;
+}
+
+.barra-energia {
+    height: 12px;
+    background: #6c63ff;
+    border-radius: 6px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.tabla-card table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-card th, .tabla-card td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn-cuestionario {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background: #00d4ff;
+    color: black;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.gauge-canvas {
+    width: 220px !important;
+    height: 220px !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Evitar que Chart.js lo estire */
+#gaugeDia {
+    max-width: 220px ;
+    max-height: 220px;
+}
+
+.card canvas {
+    width: 100% ;
+    max-width: none ;
+    height: 280px ;
+}
+
+.card h2 + canvas {
+    margin-top: 20px;
+}
+
+
+/* GRID DE 3 COLUMNAS */
+.grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr; /* la columna del medio más grande */
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+
+/* Gauge más pequeño */
+.gauge-canvas {
+    width: 180px !important;
+    height: 180px !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Texto debajo del gauge */
+.estado-emocional {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.estado-emocional .emoji-dia {
+    font-size: 40px;
+}
+
+.estado-emocional .frase-ia {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+/* Barras con números */
+.estado-item .label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+/* Fondo de la barra (vacía) */
+.barra {
+    width: 100%;
+    height: 14px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 15px;
+}
+
+/* Relleno dinámico */
+.barra::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--valor, 0%);
+    border-radius: 8px;
+    transition: width 1s ease-out;
+}
+
+/* Colores reales del relleno */
+.barra-social::after {
+    background: linear-gradient(90deg, #6c63ff, #9a94ff);
+}
+
+.barra-fisica::after {
+    background: linear-gradient(90deg, #00d4ff, #4be3ff);
+}
+
+
+@keyframes cargar {
+    to { width: var(--valor); }
+}
+
+.btn-salir {
+    padding: 10px 20px;
+    background: #e94560;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+#graficoSemana {
+    width: 100% ;
+    height: 200px ;
+    margin-top: 15px;
+}
+
+/* Tabla estética */
+.tabla-estetica {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    font-size: 16px;
+}
+
+.tabla-estetica thead th {
+    background: rgba(255,255,255,0.4);
+    padding: 12px;
+    text-align: left;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+.tabla-estetica tbody tr {
+    background: rgba(255,255,255,0.7);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.tabla-estetica tbody td {
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.tabla-card {
+    padding: 20px;
+}
+.nombre-destacado {
+    font-family: "Pacifico", cursive;
+    font-size: 90px;
+    font-weight: 400;
+    text-align: center;
+    color: #000000; /* rosa elegante */
+    margin-top: 20px;
+    margin-bottom: 20px;
+    letter-spacing: 4px;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+

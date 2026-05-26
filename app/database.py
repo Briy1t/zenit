@@ -1,15 +1,24 @@
 import sqlite3
+from datetime import datetime, timedelta
+
+# ---------------------------------------
+# CONEXIÓN
+# ---------------------------------------
 
 def get_connection():
     conn = sqlite3.connect("usuarios.db")
     conn.row_factory = sqlite3.Row
     return conn
 
+
+# ---------------------------------------
+# TABLAS PRINCIPALES
+# ---------------------------------------
+
 def create_tables():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Tabla usuarios
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,7 +30,6 @@ def create_tables():
         )
     """)
 
-    # Tabla auditoría
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS auditoria (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,9 +60,9 @@ def crear_tabla_registros():
             emocion TEXT,
             necesidades TEXT,
             notas TEXT,
-            puntaje_ia REAL,
             indice_zenit REAL,
             frase TEXT,
+            diario_texto TEXT DEFAULT '',
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
         )
     """)
@@ -80,83 +88,7 @@ def crear_tabla_indices_diarios():
 
     conn.commit()
     conn.close()
-    
-create_tables()
-crear_tabla_registros()
-crear_tabla_indices_diarios()
 
-def guardar_registro(usuario_id, datos):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO registros (
-            usuario_id, fecha, energia_social, energia_fisica,
-            senales, drenantes, reguladoras, emocion,
-            necesidades, notas, puntaje_ia, indice_zenit, frase
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        usuario_id,
-        datos["fecha"],
-        datos["energia_social"],
-        datos["energia_fisica"],
-        datos["senales"],
-        datos["drenantes"],
-        datos["reguladoras"],
-        datos["emocion"],
-        datos["necesidades"],
-        datos["notas"],
-        datos["puntaje_ia"],
-        datos["indice_zenit"],
-        datos["frase"]
-    ))
-
-    conn.commit()
-    registro_id = cursor.lastrowid
-    conn.close()
-
-    return registro_id
-
-def actualizar_indice_diario(usuario_id, fecha):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    # Obtener media e cantidad de registros del día
-    cursor.execute("""
-        SELECT AVG(indice_zenit) AS promedio, COUNT(*) AS cantidad
-        FROM registros
-        WHERE usuario_id = ? AND fecha = ?
-    """, (usuario_id, fecha))
-
-    fila = cursor.fetchone()
-    promedio = fila["promedio"]
-    cantidad = fila["cantidad"]
-
-    
-    cursor.execute("""
-        SELECT id FROM indices_diarios
-        WHERE usuario_id = ? AND fecha = ?
-    """, (usuario_id, fecha))
-
-    existente = cursor.fetchone()
-
-    if existente:
-        # Actualizar
-        cursor.execute("""
-            UPDATE indices_diarios
-            SET indice_promedio = ?, registros_conteo = ?
-            WHERE usuario_id = ? AND fecha = ?
-        """, (promedio, cantidad, usuario_id, fecha))
-    else:
-        # Crear
-        cursor.execute("""
-            INSERT INTO indices_diarios (usuario_id, fecha, indice_promedio, registros_conteo)
-            VALUES (?, ?, ?, ?)
-        """, (usuario_id, fecha, promedio, cantidad))
-
-    conn.commit()
-    conn.close()
 
 def crear_tablas_historial():
     conn = get_connection()
@@ -182,6 +114,99 @@ def crear_tablas_historial():
 
     conn.commit()
     conn.close()
+
+
+# Ejecutar creación de tablas
+create_tables()
+crear_tabla_registros()
+crear_tabla_indices_diarios()
+crear_tablas_historial()
+
+
+# ---------------------------------------
+# GUARDAR REGISTRO
+# ---------------------------------------
+
+def guardar_registro(usuario_id, datos):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO registros (
+            usuario_id, fecha, energia_social, energia_fisica,
+            senales, drenantes, reguladoras, emocion,
+            necesidades, notas, indice_zenit, frase,
+            diario_texto
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        usuario_id,
+        datos["fecha"],
+        datos["energia_social"],
+        datos["energia_fisica"],
+        datos["senales"],
+        datos["drenantes"],
+        datos["reguladoras"],
+        datos["emocion"],
+        datos["necesidades"],
+        datos["notas"],
+        datos["indice_zenit"],
+        datos["frase"],
+        datos["diario_texto"] or ""
+    ))
+
+    conn.commit()
+    registro_id = cursor.lastrowid
+    conn.close()
+    
+    return registro_id
+
+
+# ---------------------------------------
+# ÍNDICE DIARIO
+# ---------------------------------------
+
+def actualizar_indice_diario(usuario_id, fecha):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT AVG(indice_zenit) AS promedio, COUNT(*) AS cantidad
+        FROM registros
+        WHERE usuario_id = ? AND fecha = ?
+    """, (usuario_id, fecha))
+
+    fila = cursor.fetchone()
+    promedio = fila["promedio"]
+    cantidad = fila["cantidad"]
+
+    cursor.execute("""
+        SELECT id FROM indices_diarios
+        WHERE usuario_id = ? AND fecha = ?
+    """, (usuario_id, fecha))
+
+    existente = cursor.fetchone()
+
+    if existente:
+        cursor.execute("""
+            UPDATE indices_diarios
+            SET indice_promedio = ?, registros_conteo = ?
+            WHERE usuario_id = ? AND fecha = ?
+        """, (promedio, cantidad, usuario_id, fecha))
+    else:
+        cursor.execute("""
+            INSERT INTO indices_diarios (usuario_id, fecha, indice_promedio, registros_conteo)
+            VALUES (?, ?, ?, ?)
+        """, (usuario_id, fecha, promedio, cantidad))
+
+    conn.commit()
+    conn.close()
+
+
+# ---------------------------------------
+# HISTORIAL REGULADORES / DRENANTES
+# ---------------------------------------
+
 def guardar_regulador(usuario_id, regulador, fecha):
     conn = get_connection()
     cursor = conn.cursor()
@@ -189,7 +214,7 @@ def guardar_regulador(usuario_id, regulador, fecha):
     cursor.execute("""
         INSERT INTO reguladores_historial (usuario_id, regulador, fecha)
         VALUES (?, ?, ?)
-    """, (usuario_id, regulador, fecha))
+    """, (usuario_id, regulador.lower(), fecha))
 
     conn.commit()
     conn.close()
@@ -202,7 +227,96 @@ def guardar_drenante(usuario_id, drenante, fecha):
     cursor.execute("""
         INSERT INTO drenantes_historial (usuario_id, drenante, fecha)
         VALUES (?, ?, ?)
-    """, (usuario_id, drenante, fecha))
+    """, (usuario_id, drenante.lower(), fecha))
 
     conn.commit()
     conn.close()
+
+
+def obtener_reguladores(usuario_id, fecha):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT LOWER(regulador) AS nombre, COUNT(*) AS frecuencia
+        FROM reguladores_historial
+        WHERE usuario_id = ? AND fecha = ?
+        GROUP BY LOWER(regulador)
+    """, (usuario_id, fecha))
+
+    datos = cursor.fetchall()
+    conn.close()
+
+    total = sum([row["frecuencia"] for row in datos]) or 1
+
+    resultado = []
+    for row in datos:
+        efectividad = round((row["frecuencia"] / total) * 100)
+        resultado.append({
+            "nombre": row["nombre"],
+            "frecuencia": row["frecuencia"],
+            "efectividad": efectividad
+        })
+
+    return resultado
+
+
+def obtener_drenantes(usuario_id, fecha):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT LOWER(drenante) AS nombre, COUNT(*) AS frecuencia
+        FROM drenantes_historial
+        WHERE usuario_id = ? AND fecha = ?
+        GROUP BY LOWER(drenante)
+    """, (usuario_id, fecha))
+
+    datos = cursor.fetchall()
+    conn.close()
+
+    total = sum([row["frecuencia"] for row in datos]) or 1
+
+    resultado = []
+    for row in datos:
+        impacto = round((row["frecuencia"] / total) * 100)
+        resultado.append({
+            "nombre": row["nombre"],
+            "frecuencia": row["frecuencia"],
+            "impacto": impacto
+        })
+
+    return resultado
+
+
+# ---------------------------------------
+# SEMANA (PORCENTAJES)
+# ---------------------------------------
+
+def obtener_semana(usuario_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    hoy = datetime.now().date()
+    dias = []
+    valores = []
+
+    for i in range(6, -1, -1):
+        dia = hoy - timedelta(days=i)
+        dia_str = dia.strftime("%Y-%m-%d")
+
+        cursor.execute("""
+            SELECT indice_zenit
+            FROM registros
+            WHERE usuario_id = ? AND fecha = ?
+        """, (usuario_id, dia_str))
+
+        fila = cursor.fetchone()
+
+        dias.append(dia.strftime("%a"))
+        valores.append((fila["indice_zenit"] * 10) if fila else 0)
+
+    conn.close()
+    return dias, valores
+
+
