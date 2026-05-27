@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+usuarios.db
+*.db
+# Archivos temporales
+*.log
