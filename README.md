@@ -124,7 +124,7 @@ uvicorn main:app --reload
 - API pública para datos personales
 - Hashing de contraseñas (bcrypt)
 - Autenticación avanzada con JWT
-- Lanzarla en aws 
+- Lanzarla en AWS
 
 ------------------
 👩‍💻 **Autora**
