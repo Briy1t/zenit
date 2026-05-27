@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 def get_connection():
     conn = sqlite3.connect("usuarios.db")
     conn.row_factory = sqlite3.Row
+    
+    # Activar claves foráneas en SQLite
+    conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
 
@@ -318,5 +321,18 @@ def obtener_semana(usuario_id):
 
     conn.close()
     return dias, valores
+
+def crear_indices():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Índice único para evitar usuarios duplicados
+    cursor.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_usuario_nombre
+        ON usuarios(nombre)
+    """)
+
+    conn.commit()
+    conn.close()
 
 

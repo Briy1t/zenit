@@ -3,6 +3,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from starlette.middleware.sessions import SessionMiddleware
+
 from app.auth import crear_usuario, obtener_usuario, verify_password, obtener_usuario_por_id
 from app.database import (
     create_tables,
@@ -16,7 +18,8 @@ from app.database import (
     guardar_drenante,
     obtener_semana,
     obtener_reguladores,
-    obtener_drenantes
+    obtener_drenantes,
+    crear_indices
 )
 
 import random
@@ -32,15 +35,23 @@ create_tables()
 crear_tabla_registros()
 crear_tabla_indices_diarios()
 crear_tablas_historial()
+crear_indices()
+
+
+# ---------------------------
+#  APP + SESIONES
+# ---------------------------
 
 app = FastAPI()
+
+app.add_middleware(SessionMiddleware, secret_key="super_clave_ultra_segura_123")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
 # ---------------------------
-#  FAVICON (evita 404)
+#  FAVICON
 # ---------------------------
 
 @app.get("/favicon.ico")
@@ -77,7 +88,7 @@ TIPS = [
 
 
 # ---------------------------
-#  FRASES ZENIT (GLOBAL)
+#  FRASES ZENIT
 # ---------------------------
 
 FRASES_ZENIT = {
@@ -95,7 +106,17 @@ FRASES_ZENIT = {
 
 
 # ---------------------------
-#  RUTAS
+#  FUNCIÓN DE BLINDAJE
+# ---------------------------
+
+def blindar_usuario(usuario_id: int):
+    if usuario_id is None:
+        return None
+    return obtener_usuario_por_id(usuario_id)
+
+
+# ---------------------------
+#  RUTA: INICIO
 # ---------------------------
 
 @app.get("/", response_class=HTMLResponse)
@@ -123,6 +144,10 @@ async def login(request: Request, nombre: str = Form(...), clave: str = Form(...
             {"request": request, "error": "La clave es incorrecta."}
         )
 
+    # Guardar sesión real
+    request.session["usuario_id"] = user["id"]
+
+    # Verificar si tiene registros previos
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM registros WHERE usuario_id = ?", (user["id"],))
@@ -130,9 +155,19 @@ async def login(request: Request, nombre: str = Form(...), clave: str = Form(...
     conn.close()
 
     if total == 0:
-        return RedirectResponse(f"/cuestionario?usuario_id={user['id']}", status_code=303)
+        return RedirectResponse("/cuestionario", status_code=303)
 
-    return RedirectResponse(f"/dashboard?usuario_id={user['id']}", status_code=303)
+    return RedirectResponse("/dashboard", status_code=303)
+
+
+# ---------------------------
+#  LOGOUT
+# ---------------------------
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/", status_code=303)
 
 
 # ---------------------------
@@ -149,27 +184,34 @@ async def registro_post(request: Request, nombre: str = Form(...), clave: str = 
     try:
         crear_usuario(nombre, clave)
         user = obtener_usuario(nombre)
-        return RedirectResponse(f"/cuestionario?usuario_id={user['id']}", status_code=303)
+
+        # Guardar sesión real
+        request.session["usuario_id"] = user["id"]
+
+        return RedirectResponse("/cuestionario", status_code=303)
 
     except Exception:
         return templates.TemplateResponse(
             "registro.html",
             {"request": request, "error": "Ese nombre ya existe. Intenta con otro."}
         )
-    
 
 
 # ---------------------------
-#  CUESTIONARIO (GET) BLINDADO
+#  CUESTIONARIO (GET)
 # ---------------------------
 
 @app.get("/cuestionario", response_class=HTMLResponse)
-async def mostrar_cuestionario(request: Request, usuario_id: int = None):
+async def mostrar_cuestionario(request: Request):
 
-    if usuario_id is None:
+    usuario_id = request.session.get("usuario_id")
+    usuario = blindar_usuario(usuario_id)
+
+    if not usuario:
         return RedirectResponse("/", status_code=303)
 
     tip_del_dia = random.choice(TIPS)
+
     return templates.TemplateResponse(
         "cuestionario.html",
         {"request": request, "usuario_id": usuario_id, "tip_del_dia": tip_del_dia}
@@ -183,7 +225,6 @@ async def mostrar_cuestionario(request: Request, usuario_id: int = None):
 @app.post("/cuestionario")
 async def guardar_cuestionario(
     request: Request,
-    usuario_id: int = Form(...),
     energia_social: int = Form(...),
     energia_fisica: int = Form(...),
     senales: str = Form(...),
@@ -194,15 +235,37 @@ async def guardar_cuestionario(
     diario_texto: Optional[str] = Form(None)
 ):
 
+    usuario_id = request.session.get("usuario_id")
+    usuario = blindar_usuario(usuario_id)
+
+    if not usuario:
+        return RedirectResponse("/", status_code=303)
+
+    # Normalización
     senales_valores = {
-        "Dolor de cabeza": 1, "Cansancio": 2, "Palpitaciones": 1,
-        "Tensión muscular": 2, "Estómago revuelto": 1, "Respiración acelerada": 1,
-        "Tranquil@": 4, "Neutr@": 3, "Estable": 4, "Energética": 5
+        "Dolor de cabeza": 1, 
+        "Cansancio": 2, 
+        "Palpitaciones": 1,
+        "Tensión muscular": 2, 
+        "Estómago revuelto": 1, 
+        "Respiración acelerada": 1,
+        "Tranquil@": 4, 
+        "Neutr@": 3, 
+        "Estable": 4, 
+        "Energétic@": 5
     }
 
     emociones_valores = {
-        "Triste": 1, "Ansiosa": 2, "Irritable": 2, "Estresada": 2, "Cansada": 2,
-        "Neutra": 3, "Tranquila": 4, "En paz": 4, "Alegre": 5, "Motivada": 5
+        "Triste": 1, 
+        "Ansios@": 2,
+        "Irritable": 2, 
+        "Estresad@": 2, 
+        "Cansad@": 2,
+        "Neutr@": 3,
+        "Tranquil@": 4, 
+        "En paz": 4, 
+        "Alegre": 5, 
+        "Motivad@": 5
     }
 
     valor_senal = senales_valores.get(senales, 3)
@@ -217,10 +280,19 @@ async def guardar_cuestionario(
         indice -= 1
 
     indice_entero = max(1, min(round(indice), 10))
-
     frase_final = FRASES_ZENIT[indice_entero][0]
 
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id FROM registros
+        WHERE usuario_id = ? AND fecha = ?
+    """, (usuario_id, fecha_hoy))
+
+    existe = cursor.fetchone()
 
     datos = {
         "fecha": fecha_hoy,
@@ -237,8 +309,28 @@ async def guardar_cuestionario(
         "diario_texto": diario_texto or ""
     }
 
-    guardar_registro(usuario_id, datos)
+    if existe:
+        cursor.execute("""
+            UPDATE registros SET
+                energia_social = :energia_social,
+                energia_fisica = :energia_fisica,
+                senales = :senales,
+                drenantes = :drenantes,
+                reguladoras = :reguladoras,
+                emocion = :emocion,
+                necesidades = :necesidades,
+                indice_zenit = :indice_zenit,
+                frase = :frase,
+                diario_texto = :diario_texto
+            WHERE usuario_id = :usuario_id AND fecha = :fecha
+        """, {**datos, "usuario_id": usuario_id})
+    else:
+        guardar_registro(usuario_id, datos)
 
+    conn.commit()
+    conn.close()
+
+    # Guardar reguladores y drenantes
     if reguladoras:
         for r in reguladoras.split(","):
             if r.strip():
@@ -253,18 +345,21 @@ async def guardar_cuestionario(
 
     return templates.TemplateResponse(
         "resultado.html",
-        {"request": request, "index_val": indice_entero, "frase": frase_final, "usuario_id": usuario_id}
+        {"request": request, "index_val": indice_entero, "frase": frase_final}
     )
 
 
 # ---------------------------
-#  DASHBOARD BLINDADO
+#  DASHBOARD
 # ---------------------------
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def mostrar_dashboard(request: Request, usuario_id: int = None):
+async def mostrar_dashboard(request: Request):
 
-    if usuario_id is None:
+    usuario_id = request.session.get("usuario_id")
+    usuario = blindar_usuario(usuario_id)
+
+    if not usuario:
         return RedirectResponse("/", status_code=303)
 
     conn = get_connection()
@@ -278,33 +373,10 @@ async def mostrar_dashboard(request: Request, usuario_id: int = None):
         LIMIT 1
     """, (usuario_id,))
     registro = cursor.fetchone()
-    
-    cursor.execute("""
-        SELECT regulador, COUNT(*) AS veces
-        FROM reguladores_historial
-        WHERE usuario_id = ?
-        AND fecha >= DATE('now', '-30 days')
-        GROUP BY regulador
-        ORDER BY veces DESC
-    """, (usuario_id,))
-    reguladores_top = cursor.fetchall()
-    
-    cursor.execute("""
-        SELECT drenante, COUNT(*) AS veces
-        FROM drenantes_historial
-        WHERE usuario_id = ?
-        AND fecha >= DATE('now', '-30 days')
-        GROUP BY drenante
-        ORDER BY veces DESC
-    """, (usuario_id,))
-    drenantes_top = cursor.fetchall()
-
-    conn.close()
 
     if not registro:
-        return RedirectResponse(f"/cuestionario?usuario_id={usuario_id}", status_code=303)
+        return RedirectResponse("/cuestionario", status_code=303)
 
-    usuario = obtener_usuario_por_id(registro["usuario_id"])
     fecha = registro["fecha"]
 
     reguladores_dia = obtener_reguladores(usuario_id, fecha)
@@ -328,11 +400,32 @@ async def mostrar_dashboard(request: Request, usuario_id: int = None):
 
     frase_dashboard = FRASES_ZENIT[indice][0]
 
+    cursor.execute("""
+        SELECT regulador, COUNT(*) AS veces
+        FROM reguladores_historial
+        WHERE usuario_id = ?
+        AND fecha >= DATE('now', '-30 days')
+        GROUP BY regulador
+        ORDER BY veces DESC
+    """, (usuario_id,))
+    reguladores_top = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT drenante, COUNT(*) AS veces
+        FROM drenantes_historial
+        WHERE usuario_id = ?
+        AND fecha >= DATE('now', '-30 days')
+        GROUP BY drenante
+        ORDER BY veces DESC
+    """, (usuario_id,))
+    drenantes_top = cursor.fetchall()
+
+    conn.close()
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
-            "usuario_id": usuario_id,
             "nombre_usuario": usuario["nombre"],
             "emoji_dia": emoji,
             "frase_ia": frase_dashboard,
@@ -346,20 +439,23 @@ async def mostrar_dashboard(request: Request, usuario_id: int = None):
             "semana_valores": valores_semana,
             "semana_dias": dias_semana,
             "diario_texto": registro["diario_texto"],
-            "reguladores_top": reguladores_top, 
+            "reguladores_top": reguladores_top,
             "drenantes_top": drenantes_top,
         }
     )
 
 
 # ---------------------------
-#  DIARIO PERSONAL BLINDADO
+#  DIARIO PERSONAL
 # ---------------------------
 
 @app.get("/diario", response_class=HTMLResponse)
-async def ver_diario(request: Request, usuario_id: int = None):
+async def ver_diario(request: Request):
 
-    if usuario_id is None:
+    usuario_id = request.session.get("usuario_id")
+    usuario = blindar_usuario(usuario_id)
+
+    if not usuario:
         return RedirectResponse("/", status_code=303)
 
     conn = get_connection()
@@ -376,28 +472,51 @@ async def ver_diario(request: Request, usuario_id: int = None):
         ORDER BY fecha DESC
     """, (usuario_id,))
 
-
-
     diarios = cursor.fetchall()
     conn.close()
 
     return templates.TemplateResponse(
         "diario_historial.html",
-        {"request": request, "usuario_id": usuario_id, "diarios": diarios}
+        {"request": request, "diarios": diarios}
     )
-    
+
+
+# ---------------------------
+#  GUARDAR DIARIO (AJAX)
+# ---------------------------
+
 @app.post("/guardar_diario")
-async def guardar_diario(usuario_id: int = Form(...), texto: str = Form("")):
-    conn = get_connection()
-    cursor = conn.cursor()
+async def guardar_diario(request: Request, texto: str = Form("")):
+
+    # Obtener usuario desde la sesión REAL
+    usuario_id = request.session.get("usuario_id")
+
+    if not usuario_id:
+        return {"status": "error", "msg": "No hay sesión activa"}
 
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 
+    conn = get_connection()
+    cursor = conn.cursor()
+
     cursor.execute("""
-        UPDATE registros
-        SET diario_texto = ?
+        SELECT id FROM registros
         WHERE usuario_id = ? AND fecha = ?
-    """, (texto, usuario_id, fecha_hoy))
+    """, (usuario_id, fecha_hoy))
+
+    existe = cursor.fetchone()
+
+    if existe:
+        cursor.execute("""
+            UPDATE registros
+            SET diario_texto = ?
+            WHERE usuario_id = ? AND fecha = ?
+        """, (texto, usuario_id, fecha_hoy))
+    else:
+        cursor.execute("""
+            INSERT INTO registros (usuario_id, fecha, diario_texto)
+            VALUES (?, ?, ?)
+        """, (usuario_id, fecha_hoy, texto))
 
     conn.commit()
     conn.close()

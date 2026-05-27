@@ -27,16 +27,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let dren = drenantes.value.trim() !== "" ? 1 : 0;
 
-        // Valores base
+        // Valores base (CORREGIDOS)
         const senales_valores = {
-            "Dolor de cabeza": 1, "Cansancio": 2, "Palpitaciones": 1,
-            "Tensión muscular": 2, "Estómago revuelto": 1, "Respiración acelerada": 1,
-            "Tranquila": 4, "Neutra": 3, "Estable": 4, "Energética": 5
+            "Dolor de cabeza": 1,
+            "Cansancio": 2,
+            "Palpitaciones": 1,
+            "Tensión muscular": 2,
+            "Estómago revuelto": 1,
+            "Respiración acelerada": 1,
+            "Tranquil@": 4,
+            "Neutr@": 3,
+            "Estable": 4,
+            "Energétic@": 5
         };
 
         const emociones_valores = {
-            "Triste": 1, "Ansiosa": 2, "Irritable": 2, "Estresada": 2, "Cansada": 2,
-            "Neutra": 3, "Tranquila": 4, "En paz": 4, "Alegre": 5, "Motivada": 5
+            "Triste": 1,
+            "Ansios@": 2,
+            "Irritable": 2,
+            "Estresad@": 2,
+            "Cansad@": 2,
+            "Neutr@": 3,
+            "Tranquil@": 4,
+            "En paz": 4,
+            "Alegre": 5,
+            "Motivad@": 5
         };
 
         let sen_val = senales_valores[sen] || 0;
@@ -64,19 +79,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function actualizarCarita(porcentaje) {
         if (porcentaje < 30) {
-            // triste
             ojoIzq.setAttribute("d", "M38 90 C40 92 42 92 44 90");
             ojoDer.setAttribute("d", "M56 90 C58 92 60 92 62 90");
             boca.setAttribute("d", "M40 105 C45 100 55 100 60 105");
         } 
         else if (porcentaje < 70) {
-            // neutra
             ojoIzq.setAttribute("d", "M38 90 L44 90");
             ojoDer.setAttribute("d", "M56 90 L62 90");
             boca.setAttribute("d", "M40 105 L60 105");
         } 
         else {
-            // feliz
             ojoIzq.setAttribute("d", "M38 90 C40 88 42 88 44 90");
             ojoDer.setAttribute("d", "M56 90 C58 88 60 88 62 90");
             boca.setAttribute("d", "M40 102 C45 108 55 108 60 102");

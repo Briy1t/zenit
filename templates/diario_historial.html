@@ -12,7 +12,7 @@
 <div class="container">
 
     <h1>📓 Diario personal</h1>
-    <p>Notas guardadas por fecha</p>
+    
 
     {% if diarios %}
         {% for d in diarios %}
@@ -39,9 +39,10 @@
         <p>No tienes notas guardadas todavía.</p>
     {% endif %}
 
-    <a href="/dashboard?usuario_id={{ usuario_id }}" class="btn-cuestionario">
+    <a href="/dashboard" class="btn-cuestionario">
         ← Volver al dashboard
     </a>
+
 
 </div>
 
