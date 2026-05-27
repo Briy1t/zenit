@@ -3,6 +3,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from starlette.middleware.sessions import SessionMiddleware
+
 from app.auth import crear_usuario, obtener_usuario, verify_password, obtener_usuario_por_id
 from app.database import (
     create_tables,
@@ -16,7 +18,8 @@ from app.database import (
     guardar_drenante,
     obtener_semana,
     obtener_reguladores,
-    obtener_drenantes
+    obtener_drenantes,
+    crear_indices
 )
 
 import random
@@ -32,8 +35,16 @@ create_tables()
 crear_tabla_registros()
 crear_tabla_indices_diarios()
 crear_tablas_historial()
+crear_indices()
+
+
+# ---------------------------
+#  APP + SESIONES
+# ---------------------------
 
 app = FastAPI()
+
+app.add_middleware(SessionMiddleware, secret_key="super_clave_ultra_segura_123")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -99,15 +110,9 @@ FRASES_ZENIT = {
 # ---------------------------
 
 def blindar_usuario(usuario_id: int):
-    """Verifica que el usuario exista y sea válido."""
     if usuario_id is None:
         return None
-
-    usuario = obtener_usuario_por_id(usuario_id)
-    if not usuario:
-        return None
-
-    return usuario
+    return obtener_usuario_por_id(usuario_id)
 
 
 # ---------------------------
@@ -139,6 +144,10 @@ async def login(request: Request, nombre: str = Form(...), clave: str = Form(...
             {"request": request, "error": "La clave es incorrecta."}
         )
 
+    # Guardar sesión real
+    request.session["usuario_id"] = user["id"]
+
+    # Verificar si tiene registros previos
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM registros WHERE usuario_id = ?", (user["id"],))
@@ -146,9 +155,19 @@ async def login(request: Request, nombre: str = Form(...), clave: str = Form(...
     conn.close()
 
     if total == 0:
-        return RedirectResponse(f"/cuestionario?usuario_id={user['id']}", status_code=303)
+        return RedirectResponse("/cuestionario", status_code=303)
 
-    return RedirectResponse(f"/dashboard?usuario_id={user['id']}", status_code=303)
+    return RedirectResponse("/dashboard", status_code=303)
+
+
+# ---------------------------
+#  LOGOUT
+# ---------------------------
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/", status_code=303)
 
 
 # ---------------------------
@@ -165,7 +184,11 @@ async def registro_post(request: Request, nombre: str = Form(...), clave: str = 
     try:
         crear_usuario(nombre, clave)
         user = obtener_usuario(nombre)
-        return RedirectResponse(f"/cuestionario?usuario_id={user['id']}", status_code=303)
+
+        # Guardar sesión real
+        request.session["usuario_id"] = user["id"]
+
+        return RedirectResponse("/cuestionario", status_code=303)
 
     except Exception:
         return templates.TemplateResponse(
@@ -179,16 +202,13 @@ async def registro_post(request: Request, nombre: str = Form(...), clave: str = 
 # ---------------------------
 
 @app.get("/cuestionario", response_class=HTMLResponse)
-async def mostrar_cuestionario(request: Request, usuario_id: int = None):
+async def mostrar_cuestionario(request: Request):
 
+    usuario_id = request.session.get("usuario_id")
     usuario = blindar_usuario(usuario_id)
+
     if not usuario:
         return RedirectResponse("/", status_code=303)
-
-    # ❗ IMPORTANTE:
-    # Quitamos el blindaje que redirigía al dashboard si ya había registro hoy.
-    # Eso bloqueaba a usuarios nuevos.
-    # El blindaje fuerte se mantiene en el POST.
 
     tip_del_dia = random.choice(TIPS)
 
@@ -205,7 +225,6 @@ async def mostrar_cuestionario(request: Request, usuario_id: int = None):
 @app.post("/cuestionario")
 async def guardar_cuestionario(
     request: Request,
-    usuario_id: int = Form(...),
     energia_social: int = Form(...),
     energia_fisica: int = Form(...),
     senales: str = Form(...),
@@ -216,20 +235,37 @@ async def guardar_cuestionario(
     diario_texto: Optional[str] = Form(None)
 ):
 
+    usuario_id = request.session.get("usuario_id")
     usuario = blindar_usuario(usuario_id)
+
     if not usuario:
         return RedirectResponse("/", status_code=303)
 
     # Normalización
     senales_valores = {
-        "Dolor de cabeza": 1, "Cansancio": 2, "Palpitaciones": 1,
-        "Tensión muscular": 2, "Estómago revuelto": 1, "Respiración acelerada": 1,
-        "Tranquil@": 4, "Neutr@": 3, "Estable": 4, "Energética": 5
+        "Dolor de cabeza": 1, 
+        "Cansancio": 2, 
+        "Palpitaciones": 1,
+        "Tensión muscular": 2, 
+        "Estómago revuelto": 1, 
+        "Respiración acelerada": 1,
+        "Tranquil@": 4, 
+        "Neutr@": 3, 
+        "Estable": 4, 
+        "Energétic@": 5
     }
 
     emociones_valores = {
-        "Triste": 1, "Ansiosa": 2, "Irritable": 2, "Estresada": 2, "Cansada": 2,
-        "Neutra": 3, "Tranquila": 4, "En paz": 4, "Alegre": 5, "Motivada": 5
+        "Triste": 1, 
+        "Ansios@": 2,
+        "Irritable": 2, 
+        "Estresad@": 2, 
+        "Cansad@": 2,
+        "Neutr@": 3,
+        "Tranquil@": 4, 
+        "En paz": 4, 
+        "Alegre": 5, 
+        "Motivad@": 5
     }
 
     valor_senal = senales_valores.get(senales, 3)
@@ -248,7 +284,6 @@ async def guardar_cuestionario(
 
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 
-    # BLINDAJE: un solo registro por día
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -310,7 +345,7 @@ async def guardar_cuestionario(
 
     return templates.TemplateResponse(
         "resultado.html",
-        {"request": request, "index_val": indice_entero, "frase": frase_final, "usuario_id": usuario_id}
+        {"request": request, "index_val": indice_entero, "frase": frase_final}
     )
 
 
@@ -319,9 +354,11 @@ async def guardar_cuestionario(
 # ---------------------------
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def mostrar_dashboard(request: Request, usuario_id: int = None):
+async def mostrar_dashboard(request: Request):
 
+    usuario_id = request.session.get("usuario_id")
     usuario = blindar_usuario(usuario_id)
+
     if not usuario:
         return RedirectResponse("/", status_code=303)
 
@@ -338,7 +375,7 @@ async def mostrar_dashboard(request: Request, usuario_id: int = None):
     registro = cursor.fetchone()
 
     if not registro:
-        return RedirectResponse(f"/cuestionario?usuario_id={usuario_id}", status_code=303)
+        return RedirectResponse("/cuestionario", status_code=303)
 
     fecha = registro["fecha"]
 
@@ -389,7 +426,6 @@ async def mostrar_dashboard(request: Request, usuario_id: int = None):
         "dashboard.html",
         {
             "request": request,
-            "usuario_id": usuario_id,
             "nombre_usuario": usuario["nombre"],
             "emoji_dia": emoji,
             "frase_ia": frase_dashboard,
@@ -414,9 +450,11 @@ async def mostrar_dashboard(request: Request, usuario_id: int = None):
 # ---------------------------
 
 @app.get("/diario", response_class=HTMLResponse)
-async def ver_diario(request: Request, usuario_id: int = None):
+async def ver_diario(request: Request):
 
+    usuario_id = request.session.get("usuario_id")
     usuario = blindar_usuario(usuario_id)
+
     if not usuario:
         return RedirectResponse("/", status_code=303)
 
@@ -439,7 +477,7 @@ async def ver_diario(request: Request, usuario_id: int = None):
 
     return templates.TemplateResponse(
         "diario_historial.html",
-        {"request": request, "usuario_id": usuario_id, "diarios": diarios}
+        {"request": request, "diarios": diarios}
     )
 
 
@@ -448,11 +486,13 @@ async def ver_diario(request: Request, usuario_id: int = None):
 # ---------------------------
 
 @app.post("/guardar_diario")
-async def guardar_diario(usuario_id: int = Form(...), texto: str = Form("")):
+async def guardar_diario(request: Request, texto: str = Form("")):
 
-    usuario = blindar_usuario(usuario_id)
-    if not usuario:
-        return {"status": "error"}
+    # Obtener usuario desde la sesión REAL
+    usuario_id = request.session.get("usuario_id")
+
+    if not usuario_id:
+        return {"status": "error", "msg": "No hay sesión activa"}
 
     fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 

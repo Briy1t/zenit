@@ -19,7 +19,7 @@
 
             <form action="/cuestionario" method="post">
 
-                <input type="hidden" name="usuario_id" value="{{ usuario_id }}">
+                
 
                 <!-- ENERGÍA SOCIAL -->
                 <label>🗣️ Energía Social (1 a 10)</label>
@@ -42,7 +42,7 @@
                     <option>Tranquil@</option>
                     <option>Neutr@</option>
                     <option>Estable</option>
-                    <option>Energética</option>
+                    <option>Energétic@</option>
                 </select>
 
                 <!-- DRENANTES -->
@@ -58,15 +58,15 @@
                 <select name="emocion" required>
                     <option value="">Selecciona una emoción</option>
                     <option>Triste</option>
-                    <option>Ansiosa</option>
+                    <option>Ansios@</option>
                     <option>Irritable</option>
-                    <option>Estresada</option>
-                    <option>Cansada</option>
-                    <option>Neutra</option>
-                    <option>Tranquila</option>
+                    <option>Estresad@</option>
+                    <option>Cansad@</option>
+                    <option>Neutr@</option>
+                    <option>Tranquil@</option>
                     <option>En paz</option>
                     <option>Alegre</option>
-                    <option>Motivada</option>
+                    <option>Motivad@</option>
                 </select>
 
                 <!-- NECESIDADES -->
@@ -141,6 +141,14 @@
                         placeholder="Escribe lo que sientes hoy... (máx. 100 palabras)"
                         oninput="guardarDiario()"
                     ></textarea>
+
+                    <button type="button" class="btn-cuestionario" onclick="guardarDiario()">
+                        Guardar diario
+                    </button>
+
+                    <p id="estado-guardado" style="color: green; font-weight: bold; display: none;">
+                        Guardado ✓
+                    </p>
                 </div>
 
                 <!-- DIBUJO -->
@@ -165,10 +173,19 @@ function guardarDiario() {
     fetch("/guardar_diario", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `usuario_id={{ usuario_id }}&texto=${encodeURIComponent(texto)}`
+        body: `texto=${encodeURIComponent(texto)}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "ok") {
+            const msg = document.getElementById("estado-guardado");
+            msg.style.display = "block";
+            setTimeout(() => msg.style.display = "none", 2000);
+        }
     });
 }
 </script>
+
 
 <script src="/static/gota.js"></script>
 <script src="/static/diario.js"></script>
