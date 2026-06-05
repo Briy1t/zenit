@@ -19,7 +19,7 @@ RUN chown -R zenituser:zenituser /app
 USER zenituser
 
 # Exponer el puerto interno
-EXPOSE 8080
+EXPOSE 8000
 
 # Comando de arranque
-CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

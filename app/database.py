@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # ---------------------------------------
 
 def get_connection():
-    conn = sqlite3.connect("/tmp/usuarios.db")
+    conn = sqlite3.connect("usuarios.db")
     conn.row_factory = sqlite3.Row
     
     # Activar claves foráneas en SQLite
@@ -117,6 +117,13 @@ def crear_tablas_historial():
 
     conn.commit()
     conn.close()
+
+
+# Ejecutar creación de tablas
+create_tables()
+crear_tabla_registros()
+crear_tabla_indices_diarios()
+crear_tablas_historial()
 
 
 # ---------------------------------------
