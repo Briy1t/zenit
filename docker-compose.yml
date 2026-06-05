@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  zenit:
+    build: .
+    container_name: zenit_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./usuarios.db:/app/usuarios.db
+    restart: always
