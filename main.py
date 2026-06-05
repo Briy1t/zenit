@@ -26,29 +26,27 @@ import random
 from datetime import datetime
 from typing import Optional
 
-
-# ---------------------------
-#  INICIALIZACIÓN BD
-# ---------------------------
-
-create_tables()
-crear_tabla_registros()
-crear_tabla_indices_diarios()
-crear_tablas_historial()
-crear_indices()
-
-
 # ---------------------------
 #  APP + SESIONES
 # ---------------------------
 
 app = FastAPI()
 
+# ---------------------------
+#  INICIALIZACIÓN BD
+# ---------------------------
+@app.on_event("startup")
+def startup_event():
+    create_tables()
+    crear_tabla_registros()
+    crear_tabla_indices_diarios()
+    crear_tablas_historial()
+    crear_indices()
+
 app.add_middleware(SessionMiddleware, secret_key="super_clave_ultra_segura_123")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
 
 # ---------------------------
 #  FAVICON
