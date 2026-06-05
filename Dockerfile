@@ -22,4 +22,4 @@ USER zenituser
 EXPOSE 8080
 
 # Comando de arranque
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
+CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT
