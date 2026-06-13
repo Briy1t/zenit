@@ -1,0 +1,242 @@
+# DESPLIEGUE DE ZENIT en CloudRun
+
+## 1. Introducción del proyecto
+Zenit es una aplicación web desarrollada con FastAPI, diseñada para gestionar:
+
+- cuestionarios emocionales
+- diario personal 
+- análisis de progreso 
+- panel de usuario
+- animaciones y experiencia interactiva.
+
+### El objetivo del despliegue era publicar Zenit en un entorno:
+
+- gratuito
+- estable
+- accesible desde internet
+- sin depender de servidores locales
+- con despliegue automático.
+
+## 2. Objetivo del despliegue
+El objetivo técnico era:
+
+- Ejecutar Zenit en un servicio gratuito y estable.
+
+- Usar contenedores Docker.
+
+- Separar backend y base de datos.
+
+- Mantener persistencia de datos.
+
+- Activar CI/CD automático desde GitHub.
+
+- Evitar costes y evitar plataformas inestables.
+
+## 3. Intentos de despliegue y problemas encontrados
+### 3.1 Plataformas “gratuitas” no viables
+Se evaluaron varias opciones que se anunciaban como free, pero:
+
+- tenían límites muy bajos
+- no permitían contenedores completos.
+
+**Resultado: descartadas.**
+
+### 3.2 Oracle Cloud Free Tier
+Se intentó desplegar Zenit en Oracle por sus 2 instancias gratuitas.
+
+Problemas encontrados:
+- No había instancias disponibles en la región.
+
+- La región Madrid solo permite ARM, no x86.
+
+- Zenit, Docker y tu contenedor están construidos para AMD64.
+
+- No se podía crear la VM.
+
+- La red gratuita no asignaba IPv4 pública.
+
+- El soporte no resolvió nada.
+
+#### Conclusión: Oracle Free Tier no era utilizable para Zenit.
+
+### 3.3 Primer intento en Google Cloud Run
+Cloud Run era ideal porque:
+
+- ejecuta contenedores Docker
+
+- tiene free tier real
+
+- no duerme
+
+- no requiere servidores
+
+
+
+#### Primer problema:
+La base de datos estaba dentro del contenedor.
+
+Esto provocaba:
+
+- pérdida de datos,reinicios,falta de persistencia.
+
+#### Conclusión: la base de datos debía estar fuera del contenedor.
+
+### 4. Solución: mover la base de datos a Supabase
+Se migró la base de datos a Supabase Free Tier, que ofrece:
+
+- PostgreSQL real
+
+- 500 MB gratis
+
+- API REST
+
+- autenticación
+
+- sin coste.
+
+#### Cambios necesarios:
+- Reestructurar el proyecto.
+
+- Eliminar la base de datos local.
+
+- Añadir dependencias faltantes (psycopg2-binary).
+
+- Crear variables de entorno para Cloud Run.
+
+- Ajustar rutas y conexión.
+
+- Limpiar código.
+
+- Después de esto, Zenit se conectó correctamente.
+
+## 5. Despliegue final en Cloud Run
+Una vez la base de datos estaba fuera del contenedor:
+
+- Se creó la imagen Docker.
+
+- Se configuraron variables de entorno.
+
+- Se activó despliegue automático desde GitHub (CI/CD).
+
+- Se habilitó la API de Cloud Run.
+
+- Se verificó funcionamiento y logs.
+
+#### Resultado:  
+Zenit quedó funcionando correctamente dentro del free tier, sin coste.
+
+## 6. Arquitectura final
+```Código
+- Usuario → Cloud Run (FastAPI) → Supabase (PostgreSQL)
+- Backend: FastAPI
+
+- Contenedor: Docker
+
+- Hosting: Cloud Run
+
+- Base de datos: Supabase
+
+- CI/CD: GitHub → Cloud Build → Cloud Run
+
+- Logs: Cloud Logging + Error Reporting
+```
+
+## 7. Estructura del proyecto (según tu captura)
+```Código
+ZENIT-DEPLOY/
+│
+├── app/
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── database.py
+│   └── logger.py
+│
+├── static/
+│   ├── img/
+│   ├── cuestionario.css
+│   ├── dashboard.css
+│   ├── dashboard.js
+│   ├── diario.js
+│   ├── gota.js
+│   └── styles.css
+│
+├── templates/
+│   ├── bienvenida.html
+│   ├── cuestionario.html
+│   ├── dashboard.html
+│   ├── diario_historial.html
+│   ├── registro.html
+│   └── resultado.html
+│
+├── .env
+├── .env.local
+├── .gitignore
+├── Dockerfile
+├── main.py
+├── README.md
+└── requirements.txt
+```
+  
+## 8. Cambios realizados respecto a la versión original (AWS → Cloud Run)
+✔ Se añadió guardado automático del diario
+Además del botón “Guardar”.
+
+✔ Se añadieron más frases con emojis
+Actualización del contenido emocional.
+
+✔ Se corrigió el problema de los 3 días sin guardar
+El error era el nombre incorrecto del endpoint.
+
+✔ Se creó entorno de prueba
+Para verificar:
+
+- rutas
+- endpoints
+- conexión a Supabase
+- guardado de datos.
+
+✔ Se actualizó el código y se relanzó la app
+Después de corregir:
+
+- endpoints
+- emojis
+- conexión
+- dependencias
+
+## 9. Estado final del proyecto
+- Zenit está desplegado en Cloud Run.
+- La base de datos está en Supabase.
+- El despliegue es automático con cada git push.
+- No hay costes mientras se mantenga el uso actual.
+- Logs y monitoreo activos.
+- La app funciona correctamente.
+
+## 10. Aprendizajes del proceso
+### Técnicos
+- No todas las plataformas “gratuitas” son realmente gratuitas.
+- Oracle Free Tier es inestable.
+- Las bases de datos no deben ir dentro del contenedor.
+- Cloud Run requiere variables de entorno correctas.
+- Docker + FastAPI funciona muy bien en Cloud Run.
+
+### Arquitectura
+- Separar backend y base de datos es esencial.
+- Usar servicios externos simplifica el despliegue.
+- CI/CD con GitHub facilita actualizaciones.
+
+### Prácticos
+- No subir .env a GitHub.
+
+## 11. Estado final del despliegue
+
+Zenit quedó desplegado correctamente en Google Cloud Run, dentro del free tier, con CI/CD automático desde GitHub y base de datos en Supabase.
+
+### ✔ Servicio activo en Cloud Run
+  
+- ![Dashboard](assets/zenit_CloudRun.png)
+  
+### ✔ Enlace público de la aplicación
+  
+https://zenit-605379117764.europe-west1.run.app/
+
+
